@@ -1,11 +1,3 @@
-"""
-This module implements the core developer interface for pytube.
-
-The problem domain of the :class:`YouTube <YouTube> class focuses almost
-exclusively on the developer interface. Pytube offloads the heavy lifting to
-smaller peripheral modules and functions.
-
-"""
 import logging
 from typing import Any, Callable, Dict, List, Optional
 
@@ -160,6 +152,8 @@ class YouTube:
 
         # If the js_url doesn't match the cached url, fetch the new js and update
         #  the cache; otherwise, load the cache.
+        global __js_url__, __js__
+
         if __js_url__ != self.js_url:
             self._js = get(self.js_url)
             __js__ = self._js

@@ -4,9 +4,10 @@ import time
 import xml.etree.ElementTree as ElementTree
 from html import unescape
 from typing import Dict, Optional
+from json import loads
 
-from pytube import request
-from pytube.helpers import safe_filename, target_directory
+from .request import get
+from .helpers import safe_filename, target_directory
 
 
 class Caption:
@@ -22,33 +23,33 @@ class Caption:
 
         # Certain videos have runs instead of simpleText
         #  this handles that edge case
-        name_dict = caption_track['name']
-        if 'simpleText' in name_dict:
-            self.name = name_dict['simpleText']
+        name_dict = caption_track["name"]
+        if "simpleText" in name_dict:
+            self.name = name_dict["simpleText"]
         else:
-            for el in name_dict['runs']:
-                if 'text' in el:
-                    self.name = el['text']
+            for el in name_dict["runs"]:
+                if "text" in el:
+                    self.name = el["text"]
 
         # Use "vssId" instead of "languageCode", fix issue #779
         self.code = caption_track["vssId"]
         # Remove preceding '.' for backwards compatibility, e.g.:
         # English -> vssId: .en, languageCode: en
         # English (auto-generated) -> vssId: a.en, languageCode: en
-        self.code = self.code.strip('.')
+        self.code = self.code.strip(".")
 
     @property
     def xml_captions(self) -> str:
         """Download the xml caption tracks."""
-        return request.get(self.url)
+        return get(self.url)
 
     @property
     def json_captions(self) -> dict:
         """Download and parse the json caption tracks."""
-        json_captions_url = self.url.replace('fmt=srv3','fmt=json3')
-        text = request.get(json_captions_url)
-        parsed = json.loads(text)
-        assert parsed['wireMagic'] == 'pb3', 'Unexpected captions format'
+        json_captions_url = self.url.replace("fmt=srv3", "fmt=json3")
+        text = get(json_captions_url)
+        parsed = loads(text)
+        assert parsed["wireMagic"] == "pb3", "Unexpected captions format"
         return parsed
 
     def generate_srt_captions(self) -> str:
@@ -84,7 +85,9 @@ class Caption:
         root = ElementTree.fromstring(xml_captions)
         for i, child in enumerate(list(root)):
             text = child.text or ""
-            caption = unescape(text.replace("\n", " ").replace("  ", " "),)
+            caption = unescape(
+                text.replace("\n", " ").replace("  ", " "),
+            )
             try:
                 duration = float(child.attrib["dur"])
             except KeyError:
